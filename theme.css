@@ -609,6 +609,11 @@ body {
   text-decoration-color: rgba(24, 184, 104, 0.4);
 }
 
+.item.removing {
+  pointer-events: none;
+  animation: itemRemove 0.22s ease forwards;
+}
+
 .in {
   font-size: 13px;
   font-weight: 400;
@@ -841,4 +846,25 @@ body {
 .toast.on {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+@keyframes itemRemove {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    max-height: 80px;
+    margin-bottom: 5px;
+    padding-top: 13px;
+    padding-bottom: 13px;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(18px) scale(0.98);
+    max-height: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+  }
 }

@@ -416,6 +416,9 @@ class ExpenseUI {
     document
       .querySelectorAll('[data-action="show-list"]')
       .forEach((el) => el.addEventListener("click", () => this.showList()));
+    this.el.list.addEventListener("dblclick", (event) =>
+      this.handleItemDoubleClick(event),
+    );
   }
 
   handleAmountInput() {
@@ -476,6 +479,26 @@ class ExpenseUI {
     if (deleteButton) {
       this.remove(deleteButton.dataset.del);
     }
+  }
+
+  handleItemDoubleClick(event) {
+    const itemEl = event.target.closest("[data-item-id]");
+
+    if (!itemEl) return;
+    if (event.target.closest("[data-id], [data-del]")) return;
+
+    this.removeWithAnimation(itemEl.dataset.itemId, itemEl);
+  }
+
+  removeWithAnimation(id, itemEl) {
+    itemEl.classList.add("removing");
+
+    setTimeout(() => {
+      if (!this.store.remove(id)) return;
+
+      this.renderList();
+      this.toast("Đã xoá");
+    }, 220);
   }
 
   initDateTime() {
@@ -630,7 +653,7 @@ class ExpenseUI {
       : "";
 
     return `
-      <div class="item ${item.paid ? "pi" : ""}">
+      <div class="item ${item.paid ? "pi" : ""}" data-item-id="${item.id}">
           <div>
               <div class="in">${safeNote}</div>
               <div class="im">${item.time ? item.time + " · " : ""}${Formatter.dateLabel(item.date)}</div>
