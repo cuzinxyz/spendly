@@ -1,934 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Chi Tiêu — UI polish</title>
-	<link
-		href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap"
-		rel="stylesheet">
-	<style>
-		*,
-		*::before,
-		*::after {
-			box-sizing: border-box;
-			margin: 0;
-			padding: 0
-		}
-
-		:root {
-			color-scheme: dark;
-
-			/* Balanced dark UI: vẫn tối, nhưng không bị chìm/đen gắt */
-			--bg: #10111a;
-			--bg1: #141622;
-			--bg2: #181b29;
-			--bg3: #1f2333;
-			--bg4: #262b3e;
-
-			--surface: rgba(31, 35, 51, 0.78);
-			--surface-strong: rgba(38, 43, 62, 0.92);
-
-			--line: rgba(148, 163, 184, 0.14);
-			--line2: rgba(148, 163, 184, 0.24);
-			--dim: #5f6b8a;
-
-			--text: #f2f5ff;
-			--text2: #a9b4d0;
-			--text3: #6f7a99;
-
-			--accent: #7c6dff;
-			--accent-l: #a79cff;
-			--accent-d: #6254e8;
-
-			--glow: rgba(124, 109, 255, 0.26);
-			--glow2: rgba(124, 109, 255, 0.11);
-
-			--green: #35d08b;
-			--green-d: rgba(53, 208, 139, 0.13);
-			--red: #ff6681;
-			--red-d: rgba(255, 102, 129, 0.13);
-
-			--shadow: 0 18px 70px rgba(0, 0, 0, 0.32);
-			--font: 'DM Sans', sans-serif;
-			--mono: 'DM Mono', monospace;
-		}
-
-		html,
-		body {
-			height: 100%;
-			overflow: hidden;
-			background:
-				radial-gradient(circle at 50% 42%, rgba(124, 109, 255, 0.13), transparent 36%),
-				radial-gradient(circle at 14% 18%, rgba(53, 208, 139, 0.08), transparent 28%),
-				linear-gradient(180deg, var(--bg1), var(--bg));
-		}
-
-		body {
-			font-family: var(--font);
-			color: var(--text);
-			font-size: 14px;
-			-webkit-font-smoothing: antialiased
-		}
-
-		::selection {
-			background: rgba(81, 68, 238, 0.35)
-		}
-
-		/* canvas */
-		#bg {
-			position: fixed;
-			inset: 0;
-			z-index: 0;
-			display: block;
-			width: 100vw;
-			height: 100vh;
-			pointer-events: none;
-			opacity: 1
-		}
-
-		/* views */
-		.view {
-			position: fixed;
-			inset: 0;
-			z-index: 10;
-			transition: opacity .35s cubic-bezier(.4, 0, .2, 1), transform .35s cubic-bezier(.4, 0, .2, 1)
-		}
-
-		.view.off {
-			opacity: 0;
-			pointer-events: none
-		}
-
-		/* ═══════════ ADD VIEW ═══════════ */
-		#va {
-			display: grid;
-			place-items: center
-		}
-
-		#va.off {
-			transform: scale(.96)
-		}
-
-		/* top bar */
-		.topbar {
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			padding: 24px 32px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between
-		}
-
-		.brand {
-			font-size: 11px;
-			font-weight: 500;
-			letter-spacing: .18em;
-			text-transform: uppercase;
-			color: var(--text3)
-		}
-
-		.topstats {
-			display: flex;
-			gap: 24px
-		}
-
-		.ts {
-			text-align: right;
-			cursor: pointer;
-			transition: opacity .2s
-		}
-
-		.ts:hover {
-			opacity: .7
-		}
-
-		.ts-l {
-			font-size: 9px;
-			letter-spacing: .12em;
-			text-transform: uppercase;
-			color: var(--text3);
-			margin-bottom: 2px
-		}
-
-		.ts-v {
-			font-family: var(--mono);
-			font-size: 12px
-		}
-
-		.ts.un .ts-v {
-			color: var(--red)
-		}
-
-		.ts.pa .ts-v {
-			color: var(--green)
-		}
-
-		/* center */
-		.stage {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			width: 100%
-		}
-
-		.amt-wrap {
-			display: flex;
-			align-items: baseline;
-			gap: 12px;
-			position: relative
-		}
-
-		.sym {
-			font-family: var(--mono);
-			font-size: clamp(22px, 3.5vw, 38px);
-			font-weight: 400;
-			color: var(--text3);
-			line-height: 1;
-			user-select: none;
-			transition: color .25s;
-		}
-
-		.sym.lit {
-			color: var(--accent-l)
-		}
-
-		#amt {
-			font-family: var(--mono);
-			font-size: clamp(56px, 11vw, 108px);
-			font-weight: 300;
-			letter-spacing: -.04em;
-			color: var(--text);
-			background: none;
-			border: none;
-			outline: none;
-			caret-color: transparent;
-			text-align: center;
-			width: auto;
-			min-width: 60px;
-			max-width: 78vw;
-		}
-
-		#amt::placeholder {
-			color: var(--text3)
-		}
-
-		#amt.shake {
-			animation: shake .28s
-		}
-
-		@keyframes shake {
-
-			0%,
-			100% {
-				transform: translateX(0)
-			}
-
-			30% {
-				transform: translateX(-8px)
-			}
-
-			70% {
-				transform: translateX(8px)
-			}
-		}
-
-		/* fake caret */
-		.caret {
-			display: inline-block;
-			width: 3px;
-			border-radius: 2px;
-			background: var(--accent-l);
-			margin-left: 4px;
-			opacity: 0;
-			vertical-align: baseline;
-			animation: blink 1s infinite
-		}
-
-		@keyframes blink {
-
-			0%,
-			100% {
-				opacity: 0
-			}
-
-			40%,
-			60% {
-				opacity: 1
-			}
-		}
-
-		#amt:focus~.caret {
-			opacity: 1
-		}
-
-		.preview {
-			font-family: var(--mono);
-			font-size: 12px;
-			color: var(--text3);
-			margin-top: 8px;
-			height: 16px;
-			transition: opacity .2s;
-			opacity: 0;
-			letter-spacing: .03em
-		}
-
-		.preview.show {
-			opacity: 1
-		}
-
-		/* note */
-		.note-row {
-			margin-top: 52px;
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			width: min(400px, 72vw)
-		}
-
-		.debt-row {
-			margin-top: 16px;
-		}
-
-		.note-arr {
-			font-size: 14px;
-			color: var(--text3);
-			flex-shrink: 0;
-			font-family: var(--mono);
-			letter-spacing: -.02em
-		}
-
-		#note,
-		#debt {
-			flex: 1;
-			background: none;
-			border: none;
-			outline: none;
-			font-family: var(--font);
-			font-size: 16px;
-			font-weight: 300;
-			font-style: italic;
-			color: var(--text);
-			caret-color: var(--accent-l);
-			border-bottom: 1px solid var(--line2);
-			padding: 8px 0;
-			transition: border-color .2s;
-		}
-
-		#note::placeholder,
-		#debt::placeholder {
-			color: var(--text3)
-		}
-
-		#note:focus,
-		#debt:focus {
-			border-color: var(--dim)
-		}
-
-		/* datetime */
-		.dt {
-			margin-top: 24px;
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			opacity: .5;
-			transition: opacity .2s
-		}
-
-		.dt:focus-within,
-		.dt:hover {
-			opacity: 1
-		}
-
-		.chip {
-			position: relative;
-			font-family: var(--mono);
-			font-size: 11px;
-			color: var(--text3);
-			background: var(--bg3);
-			border: 1px solid var(--line);
-			border-radius: 6px;
-			padding: 5px 11px;
-			transition: all .15s;
-			cursor: pointer
-		}
-
-		.chip input {
-			position: absolute;
-			inset: 0;
-			opacity: 0;
-			width: 100%;
-			height: 100%;
-			cursor: pointer;
-			border: none;
-			background: none;
-			outline: none
-		}
-
-		.chip:hover {
-			border-color: var(--dim);
-			color: var(--text2)
-		}
-
-		/* hints */
-		.hints {
-			position: absolute;
-			bottom: 28px;
-			left: 0;
-			right: 0;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			gap: 32px
-		}
-
-		.h {
-			display: flex;
-			align-items: center;
-			gap: 7px;
-			font-size: 11px;
-			color: var(--text3)
-		}
-
-		.k {
-			font-family: var(--mono);
-			font-size: 9px;
-			color: var(--text3);
-			border: 1px solid var(--line2);
-			border-radius: 4px;
-			padding: 2px 7px;
-			letter-spacing: .04em
-		}
-
-		/* ═══════════ LIST VIEW ═══════════ */
-		#vl {
-			display: flex;
-			flex-direction: column;
-			background:
-				linear-gradient(180deg, rgba(20, 22, 34, 0.94), rgba(16, 17, 26, 0.98));
-			backdrop-filter: blur(16px)
-		}
-
-		#vl.off {
-			transform: translateY(16px)
-		}
-
-		.lh {
-			padding: 24px 32px 0;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			flex-shrink: 0
-		}
-
-		.lh-t {
-			font-size: 10px;
-			font-weight: 500;
-			letter-spacing: .16em;
-			text-transform: uppercase;
-			color: var(--text3)
-		}
-
-		.lh-back {
-			font-size: 11px;
-			color: var(--text3);
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			gap: 8px;
-			transition: color .2s
-		}
-
-		.lh-back:hover {
-			color: var(--text2)
-		}
-
-		.lsum {
-			padding: 16px 32px;
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 8px;
-			flex-shrink: 0
-		}
-
-		.sc {
-			border-radius: 10px;
-			padding: 14px 18px;
-			border: 1px solid transparent
-		}
-
-		.sc.un {
-			background: var(--red-d);
-			border-color: rgba(217, 63, 88, 0.12)
-		}
-
-		.sc.pa {
-			background: var(--green-d);
-			border-color: rgba(24, 184, 104, 0.12)
-		}
-
-		.sc-l {
-			font-size: 9px;
-			letter-spacing: .12em;
-			text-transform: uppercase;
-			margin-bottom: 5px
-		}
-
-		.sc.un .sc-l {
-			color: rgba(217, 63, 88, 0.5)
-		}
-
-		.sc.pa .sc-l {
-			color: rgba(24, 184, 104, 0.5)
-		}
-
-		.sc-v {
-			font-family: var(--mono);
-			font-size: 18px;
-			font-weight: 400
-		}
-
-		.sc.un .sc-v {
-			color: var(--red)
-		}
-
-		.sc.pa .sc-v {
-			color: var(--green)
-		}
-
-		.lscroll {
-			flex: 1;
-			overflow-y: auto;
-			padding: 8px 32px 80px;
-			scrollbar-width: thin;
-			scrollbar-color: var(--line) transparent
-		}
-
-		.lscroll::-webkit-scrollbar {
-			width: 2px
-		}
-
-		.lscroll::-webkit-scrollbar-thumb {
-			background: var(--line2)
-		}
-
-		.empty {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			height: 100%;
-			gap: 12px
-		}
-
-		.empty-dash {
-			width: 24px;
-			height: 1px;
-			background: var(--line2)
-		}
-
-		.empty-t {
-			font-size: 12px;
-			color: var(--text3);
-			text-align: center;
-			line-height: 2
-		}
-
-		.dg {
-			margin-bottom: 28px
-		}
-
-		.dhd {
-			font-size: 9px;
-			font-weight: 500;
-			letter-spacing: .14em;
-			text-transform: uppercase;
-			color: var(--text3);
-			margin-bottom: 10px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			padding-left: 2px
-		}
-
-		.dtot {
-			font-family: var(--mono);
-			font-size: 9px;
-			color: var(--text3)
-		}
-
-		.item {
-			display: grid;
-			grid-template-columns: 1fr auto;
-			align-items: center;
-			padding: 13px 16px;
-			border-radius: 10px;
-			border: 1px solid var(--line);
-			background: var(--bg3);
-			margin-bottom: 5px;
-			cursor: default;
-			transition: border-color .15s, background .15s;
-			position: relative;
-			overflow: hidden;
-		}
-
-		.item::after {
-			content: '';
-			position: absolute;
-			left: 0;
-			top: 20%;
-			bottom: 20%;
-			width: 2px;
-			background: var(--accent-d);
-			opacity: 0;
-			transition: opacity .2s;
-			border-radius: 0 1px 1px 0
-		}
-
-		.item:hover {
-			border-color: var(--line2);
-			background: var(--bg4)
-		}
-
-		.item:hover::after {
-			opacity: 1
-		}
-
-		.item.pi {
-			opacity: .45
-		}
-
-		.item.pi .ia {
-			text-decoration: line-through;
-			text-decoration-color: rgba(24, 184, 104, 0.4)
-		}
-
-		.in {
-			font-size: 13px;
-			font-weight: 400;
-			color: var(--text);
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			max-width: 190px;
-			margin-bottom: 3px
-		}
-
-		.im {
-			font-size: 10px;
-			color: var(--text3);
-			font-family: var(--mono)
-		}
-
-		.idb {
-			display: inline-flex;
-			align-items: center;
-			gap: 5px;
-			width: fit-content;
-			margin-top: 6px;
-			padding: 3px 8px;
-			border-radius: 999px;
-			background: rgba(124, 109, 255, 0.10);
-			border: 1px solid rgba(124, 109, 255, 0.16);
-			color: var(--accent-l);
-			font-size: 10px;
-			font-family: var(--font);
-			font-style: italic;
-			max-width: 190px;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-		}
-
-		.ir {
-			display: flex;
-			flex-direction: column;
-			align-items: flex-end;
-			gap: 7px
-		}
-
-		.ia {
-			font-family: var(--mono);
-			font-size: 13px;
-			font-weight: 500;
-			color: var(--text)
-		}
-
-		.ib {
-			font-size: 9px;
-			letter-spacing: .06em;
-			padding: 3px 9px;
-			border-radius: 20px;
-			cursor: pointer;
-			transition: all .15s;
-			white-space: nowrap
-		}
-
-		.ib.un {
-			background: var(--red-d);
-			color: var(--red);
-			border: 1px solid rgba(217, 63, 88, 0.18)
-		}
-
-		.ib.pa {
-			background: var(--green-d);
-			color: var(--green);
-			border: 1px solid rgba(24, 184, 104, 0.18)
-		}
-
-		.ib:hover {
-			filter: brightness(1.2)
-		}
-
-		.dx {
-			position: absolute;
-			top: 9px;
-			right: 9px;
-			width: 18px;
-			height: 18px;
-			border-radius: 50%;
-			background: none;
-			border: none;
-			color: var(--text3);
-			font-size: 15px;
-			cursor: pointer;
-			display: none;
-			align-items: center;
-			justify-content: center;
-			line-height: 1;
-			transition: color .15s;
-			padding: 0
-		}
-
-		.item:hover .dx {
-			display: flex
-		}
-
-		.dx:hover {
-			color: var(--red)
-		}
-
-
-		/* UI polish: stronger hierarchy, readable secondary text, softer cards */
-		.brand,
-		.lh-t {
-			color: var(--text2);
-		}
-
-		.ts-l,
-		.sc-l,
-		.dhd,
-		.dtot,
-		.im,
-		.empty-t,
-		.h,
-		.k,
-		.note-arr {
-			color: var(--text3);
-		}
-
-		.ts-v,
-		.sc-v,
-		.ia,
-		.in {
-			color: var(--text);
-		}
-
-		.topbar,
-		.lh {
-			background: linear-gradient(180deg, rgba(16, 17, 26, 0.52), transparent);
-		}
-
-		.chip,
-		.item,
-		.toast {
-			background: var(--surface);
-			border-color: var(--line);
-			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
-			backdrop-filter: blur(14px);
-		}
-
-		.item {
-			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.13);
-		}
-
-		.item:hover,
-		.chip:hover {
-			background: var(--surface-strong);
-			border-color: var(--line2);
-		}
-
-		.sc {
-			box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
-			backdrop-filter: blur(12px);
-		}
-
-		#note,
-		#debt {
-			border-bottom-color: var(--line2);
-		}
-
-		#note:focus,
-		#debt:focus {
-			border-color: var(--accent-l);
-		}
-
-		#amt::placeholder,
-		#note::placeholder,
-		#debt::placeholder {
-			color: rgba(169, 180, 208, 0.42);
-		}
-
-		.preview.show {
-			color: var(--text2);
-		}
-
-		.ib:hover,
-		.ts:hover,
-		.lh-back:hover {
-			filter: none;
-			opacity: 1;
-		}
-
-		.ib:hover {
-			transform: translateY(-1px);
-		}
-
-		.flash {
-			background: rgba(124, 109, 255, 0.08);
-		}
-
-		/* flash + toast */
-		.flash {
-			position: fixed;
-			inset: 0;
-			background: rgba(81, 68, 238, 0.05);
-			pointer-events: none;
-			z-index: 50;
-			opacity: 0;
-			transition: opacity .08s
-		}
-
-		.flash.on {
-			opacity: 1
-		}
-
-		.toast {
-			position: fixed;
-			bottom: 30px;
-			left: 50%;
-			transform: translateX(-50%) translateY(10px);
-			background: var(--bg4);
-			border: 1px solid var(--line2);
-			border-radius: 20px;
-			padding: 9px 18px;
-			font-size: 11px;
-			color: var(--text3);
-			opacity: 0;
-			transition: all .22s;
-			pointer-events: none;
-			z-index: 999;
-			font-family: var(--mono);
-			letter-spacing: .04em;
-			white-space: nowrap
-		}
-
-		.toast.on {
-			opacity: 1;
-			transform: translateX(-50%) translateY(0)
-		}
-	</style>
-</head>
-
-<body>
-	<canvas id="bg"></canvas>
-
-	<!-- ADD VIEW -->
-	<div class="view" id="va">
-		<div class="topbar">
-			<span class="brand">Chi tiêu</span>
-			<div class="topstats">
-				<div class="ts un" onclick="showList()" title="Xem danh sách (L)">
-					<div class="ts-l">Chưa trả</div>
-					<div class="ts-v" id="ts-u">—</div>
-				</div>
-				<div class="ts pa" onclick="showList()" title="Xem danh sách (L)">
-					<div class="ts-l">Đã trả</div>
-					<div class="ts-v" id="ts-p">—</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="stage">
-			<div class="amt-wrap">
-				<span class="sym" id="sym">₫</span>
-				<input id="amt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" tabindex="1"
-					spellcheck="false">
-				<span class="caret"></span>
-			</div>
-			<div class="preview" id="prev"></div>
-
-			<div class="note-row">
-				<span class="note-arr">→</span>
-				<input id="note" type="text" placeholder="ghi chú..." autocomplete="off" tabindex="2" spellcheck="false">
-			</div>
-
-			<div class="note-row debt-row">
-				<span class="note-arr">↳</span>
-				<input id="debt" type="text" placeholder="nợ ai? bỏ trống nếu không có" autocomplete="off" tabindex="3"
-					spellcheck="false">
-			</div>
-
-			<div class="dt" id="dt">
-				<div class="chip" id="chip-d"><span id="ld">hôm nay</span><input type="date" id="din" tabindex="4">
-				</div>
-				<div class="chip" id="chip-t"><span id="lt">bây giờ</span><input type="time" id="tin" tabindex="5">
-				</div>
-			</div>
-		</div>
-
-		<div class="hints">
-			<span class="h"><span class="k">Tab</span> chuyển ô</span>
-			<span class="h"><span class="k">↵ Enter</span> lưu</span>
-			<span class="h"><span class="k">L</span> danh sách</span>
-			<span class="h"><span class="k">Esc</span> xoá trắng</span>
-		</div>
-	</div>
-
-	<!-- LIST VIEW -->
-	<div class="view off" id="vl">
-		<div class="lh">
-			<span class="lh-t">Lịch sử chi tiêu</span>
-			<span class="lh-back" onclick="showAdd()"><span class="k">Esc</span> quay lại thêm</span>
-		</div>
-		<div class="lsum">
-			<div class="sc un">
-				<div class="sc-l">Chưa trả</div>
-				<div class="sc-v" id="ls-u">0 ₫</div>
-			</div>
-			<div class="sc pa">
-				<div class="sc-l">Đã trả</div>
-				<div class="sc-v" id="ls-p">0 ₫</div>
-			</div>
-		</div>
-		<div class="lscroll">
-			<div class="empty" id="empty">
-				<div class="empty-dash"></div>
-				<div class="empty-t">Chưa có khoản nào.<br>Nhấn <strong style="color:var(--text2)">Esc</strong> để bắt
-					đầu thêm.</div>
-			</div>
-			<div id="list"></div>
-		</div>
-	</div>
-
-	<div class="flash" id="flash"></div>
-	<div class="toast" id="toast"></div>
-
-	<script src="./main.js"></script>
-
-</body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spendly</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Roboto+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./theme.css" />
+  </head>
+
+  <body>
+    <canvas id="bg"></canvas>
+
+    <!-- ADD VIEW -->
+    <div class="view" id="va">
+      <div class="topbar">
+        <span class="brand">Chi tiêu</span>
+        <div class="topstats">
+          <div class="ts un" data-action="show-list" title="Xem danh sách (L)">
+            <div class="ts-l">Chưa trả</div>
+            <div class="ts-v" id="ts-u">—</div>
+          </div>
+          <div class="ts pa" data-action="show-list" title="Xem danh sách (L)">
+            <div class="ts-l">Đã trả</div>
+            <div class="ts-v" id="ts-p">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="amt-wrap">
+          <span class="sym" id="sym">₫</span>
+          <input
+            id="amt"
+            type="text"
+            inputmode="numeric"
+            placeholder="0"
+            autocomplete="off"
+            tabindex="1"
+            spellcheck="false"
+          />
+          <span class="caret"></span>
+        </div>
+        <div class="preview" id="prev"></div>
+
+        <div class="note-row">
+          <span class="note-arr">→</span>
+          <input
+            id="note"
+            type="text"
+            placeholder="ghi chú..."
+            autocomplete="off"
+            tabindex="2"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="note-row debt-row">
+          <span class="note-arr">↳</span>
+          <input
+            id="debt"
+            type="text"
+            placeholder="nợ ai? bỏ trống nếu không có"
+            autocomplete="off"
+            tabindex="3"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="dt" id="dt">
+          <div class="chip" id="chip-d">
+            <span id="ld">hôm nay</span
+            ><input type="date" id="din" tabindex="4" />
+          </div>
+          <div class="chip" id="chip-t">
+            <span id="lt">bây giờ</span
+            ><input type="time" id="tin" tabindex="5" />
+          </div>
+        </div>
+      </div>
+
+      <div class="hints">
+        <span class="h"><span class="k">Tab</span> chuyển ô</span>
+        <span class="h"><span class="k">↵ Enter</span> lưu</span>
+        <span class="h"><span class="k">L</span> danh sách</span>
+        <span class="h"><span class="k">Esc</span> xoá trắng</span>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div class="view off" id="vl">
+      <div class="lh">
+        <span class="lh-t">Lịch sử chi tiêu</span>
+        <span class="lh-back" onclick="showAdd()"
+          ><span class="k">Esc</span> quay lại thêm</span
+        >
+      </div>
+      <div class="lsum">
+        <div class="sc un">
+          <div class="sc-l">Chưa trả</div>
+          <div class="sc-v" id="ls-u">0 ₫</div>
+        </div>
+        <div class="sc pa">
+          <div class="sc-l">Đã trả</div>
+          <div class="sc-v" id="ls-p">0 ₫</div>
+        </div>
+      </div>
+      <div class="lscroll">
+        <div class="empty" id="empty">
+          <div class="empty-dash"></div>
+          <div class="empty-t">
+            Chưa có khoản nào.<br />Nhấn
+            <strong style="color: var(--text2)">Esc</strong> để bắt đầu thêm.
+          </div>
+        </div>
+        <div id="list"></div>
+      </div>
+    </div>
+
+    <div class="flash" id="flash"></div>
+    <div class="toast" id="toast"></div>
+
+    <script src="./main.js"></script>
+  </body>
 </html>
