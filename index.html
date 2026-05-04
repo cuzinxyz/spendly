@@ -2,1216 +2,933 @@
 <html lang="vi">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi Tiêu — UI polish</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
-    <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0
-        }
-
-        :root {
-            color-scheme: dark;
-
-            /* Balanced dark UI: vẫn tối, nhưng không bị chìm/đen gắt */
-            --bg: #10111a;
-            --bg1: #141622;
-            --bg2: #181b29;
-            --bg3: #1f2333;
-            --bg4: #262b3e;
-
-            --surface: rgba(31, 35, 51, 0.78);
-            --surface-strong: rgba(38, 43, 62, 0.92);
-
-            --line: rgba(148, 163, 184, 0.14);
-            --line2: rgba(148, 163, 184, 0.24);
-            --dim: #5f6b8a;
-
-            --text: #f2f5ff;
-            --text2: #a9b4d0;
-            --text3: #6f7a99;
-
-            --accent: #7c6dff;
-            --accent-l: #a79cff;
-            --accent-d: #6254e8;
-
-            --glow: rgba(124, 109, 255, 0.26);
-            --glow2: rgba(124, 109, 255, 0.11);
-
-            --green: #35d08b;
-            --green-d: rgba(53, 208, 139, 0.13);
-            --red: #ff6681;
-            --red-d: rgba(255, 102, 129, 0.13);
-
-            --shadow: 0 18px 70px rgba(0, 0, 0, 0.32);
-            --font: 'DM Sans', sans-serif;
-            --mono: 'DM Mono', monospace;
-        }
-
-        html,
-        body {
-            height: 100%;
-            overflow: hidden;
-            background:
-                radial-gradient(circle at 50% 42%, rgba(124, 109, 255, 0.13), transparent 36%),
-                radial-gradient(circle at 14% 18%, rgba(53, 208, 139, 0.08), transparent 28%),
-                linear-gradient(180deg, var(--bg1), var(--bg));
-        }
-
-        body {
-            font-family: var(--font);
-            color: var(--text);
-            font-size: 14px;
-            -webkit-font-smoothing: antialiased
-        }
-
-        ::selection {
-            background: rgba(81, 68, 238, 0.35)
-        }
-
-        /* canvas */
-        #bg {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            opacity: 1
-        }
-
-        /* views */
-        .view {
-            position: fixed;
-            inset: 0;
-            z-index: 10;
-            transition: opacity .35s cubic-bezier(.4, 0, .2, 1), transform .35s cubic-bezier(.4, 0, .2, 1)
-        }
-
-        .view.off {
-            opacity: 0;
-            pointer-events: none
-        }
-
-        /* ═══════════ ADD VIEW ═══════════ */
-        #va {
-            display: grid;
-            place-items: center
-        }
-
-        #va.off {
-            transform: scale(.96)
-        }
-
-        /* top bar */
-        .topbar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 24px 32px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between
-        }
-
-        .brand {
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-            color: var(--text3)
-        }
-
-        .topstats {
-            display: flex;
-            gap: 24px
-        }
-
-        .ts {
-            text-align: right;
-            cursor: pointer;
-            transition: opacity .2s
-        }
-
-        .ts:hover {
-            opacity: .7
-        }
-
-        .ts-l {
-            font-size: 9px;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            color: var(--text3);
-            margin-bottom: 2px
-        }
-
-        .ts-v {
-            font-family: var(--mono);
-            font-size: 12px
-        }
-
-        .ts.un .ts-v {
-            color: var(--red)
-        }
-
-        .ts.pa .ts-v {
-            color: var(--green)
-        }
-
-        /* center */
-        .stage {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%
-        }
-
-        .amt-wrap {
-            display: flex;
-            align-items: baseline;
-            gap: 12px;
-            position: relative
-        }
-
-        .sym {
-            font-family: var(--mono);
-            font-size: clamp(22px, 3.5vw, 38px);
-            font-weight: 400;
-            color: var(--text3);
-            line-height: 1;
-            user-select: none;
-            transition: color .25s;
-        }
-
-        .sym.lit {
-            color: var(--accent-l)
-        }
-
-        #amt {
-            font-family: var(--mono);
-            font-size: clamp(56px, 11vw, 108px);
-            font-weight: 300;
-            letter-spacing: -.04em;
-            color: var(--text);
-            background: none;
-            border: none;
-            outline: none;
-            caret-color: transparent;
-            text-align: center;
-            width: auto;
-            min-width: 60px;
-            max-width: 78vw;
-        }
-
-        #amt::placeholder {
-            color: var(--text3)
-        }
-
-        #amt.shake {
-            animation: shake .28s
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0)
-            }
-
-            30% {
-                transform: translateX(-8px)
-            }
-
-            70% {
-                transform: translateX(8px)
-            }
-        }
-
-        /* fake caret */
-        .caret {
-            display: inline-block;
-            width: 3px;
-            border-radius: 2px;
-            background: var(--accent-l);
-            margin-left: 4px;
-            opacity: 0;
-            vertical-align: baseline;
-            animation: blink 1s infinite
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 0
-            }
-
-            40%,
-            60% {
-                opacity: 1
-            }
-        }
-
-        #amt:focus~.caret {
-            opacity: 1
-        }
-
-        .preview {
-            font-family: var(--mono);
-            font-size: 12px;
-            color: var(--text3);
-            margin-top: 8px;
-            height: 16px;
-            transition: opacity .2s;
-            opacity: 0;
-            letter-spacing: .03em
-        }
-
-        .preview.show {
-            opacity: 1
-        }
-
-        /* note */
-        .note-row {
-            margin-top: 52px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            width: min(400px, 72vw)
-        }
-
-        .note-arr {
-            font-size: 14px;
-            color: var(--text3);
-            flex-shrink: 0;
-            font-family: var(--mono);
-            letter-spacing: -.02em
-        }
-
-        #note {
-            flex: 1;
-            background: none;
-            border: none;
-            outline: none;
-            font-family: var(--font);
-            font-size: 16px;
-            font-weight: 300;
-            font-style: italic;
-            color: var(--text);
-            caret-color: var(--accent-l);
-            border-bottom: 1px solid var(--line2);
-            padding: 8px 0;
-            transition: border-color .2s;
-        }
-
-        #note::placeholder {
-            color: var(--text3)
-        }
-
-        #note:focus {
-            border-color: var(--dim)
-        }
-
-        /* datetime */
-        .dt {
-            margin-top: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: .5;
-            transition: opacity .2s
-        }
-
-        .dt:focus-within,
-        .dt:hover {
-            opacity: 1
-        }
-
-        .chip {
-            position: relative;
-            font-family: var(--mono);
-            font-size: 11px;
-            color: var(--text3);
-            background: var(--bg3);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            padding: 5px 11px;
-            transition: all .15s;
-            cursor: pointer
-        }
-
-        .chip input {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            border: none;
-            background: none;
-            outline: none
-        }
-
-        .chip:hover {
-            border-color: var(--dim);
-            color: var(--text2)
-        }
-
-        /* hints */
-        .hints {
-            position: absolute;
-            bottom: 28px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 32px
-        }
-
-        .h {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 11px;
-            color: var(--text3)
-        }
-
-        .k {
-            font-family: var(--mono);
-            font-size: 9px;
-            color: var(--text3);
-            border: 1px solid var(--line2);
-            border-radius: 4px;
-            padding: 2px 7px;
-            letter-spacing: .04em
-        }
-
-        /* ═══════════ LIST VIEW ═══════════ */
-        #vl {
-            display: flex;
-            flex-direction: column;
-            background:
-                linear-gradient(180deg, rgba(20, 22, 34, 0.94), rgba(16, 17, 26, 0.98));
-            backdrop-filter: blur(16px)
-        }
-
-        #vl.off {
-            transform: translateY(16px)
-        }
-
-        .lh {
-            padding: 24px 32px 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0
-        }
-
-        .lh-t {
-            font-size: 10px;
-            font-weight: 500;
-            letter-spacing: .16em;
-            text-transform: uppercase;
-            color: var(--text3)
-        }
-
-        .lh-back {
-            font-size: 11px;
-            color: var(--text3);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: color .2s
-        }
-
-        .lh-back:hover {
-            color: var(--text2)
-        }
-
-        .lsum {
-            padding: 16px 32px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            flex-shrink: 0
-        }
-
-        .sc {
-            border-radius: 10px;
-            padding: 14px 18px;
-            border: 1px solid transparent
-        }
-
-        .sc.un {
-            background: var(--red-d);
-            border-color: rgba(217, 63, 88, 0.12)
-        }
-
-        .sc.pa {
-            background: var(--green-d);
-            border-color: rgba(24, 184, 104, 0.12)
-        }
-
-        .sc-l {
-            font-size: 9px;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin-bottom: 5px
-        }
-
-        .sc.un .sc-l {
-            color: rgba(217, 63, 88, 0.5)
-        }
-
-        .sc.pa .sc-l {
-            color: rgba(24, 184, 104, 0.5)
-        }
-
-        .sc-v {
-            font-family: var(--mono);
-            font-size: 18px;
-            font-weight: 400
-        }
-
-        .sc.un .sc-v {
-            color: var(--red)
-        }
-
-        .sc.pa .sc-v {
-            color: var(--green)
-        }
-
-        .lscroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 32px 80px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--line) transparent
-        }
-
-        .lscroll::-webkit-scrollbar {
-            width: 2px
-        }
-
-        .lscroll::-webkit-scrollbar-thumb {
-            background: var(--line2)
-        }
-
-        .empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            gap: 12px
-        }
-
-        .empty-dash {
-            width: 24px;
-            height: 1px;
-            background: var(--line2)
-        }
-
-        .empty-t {
-            font-size: 12px;
-            color: var(--text3);
-            text-align: center;
-            line-height: 2
-        }
-
-        .dg {
-            margin-bottom: 28px
-        }
-
-        .dhd {
-            font-size: 9px;
-            font-weight: 500;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: var(--text3);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding-left: 2px
-        }
-
-        .dtot {
-            font-family: var(--mono);
-            font-size: 9px;
-            color: var(--text3)
-        }
-
-        .item {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
-            padding: 13px 16px;
-            border-radius: 10px;
-            border: 1px solid var(--line);
-            background: var(--bg3);
-            margin-bottom: 5px;
-            cursor: default;
-            transition: border-color .15s, background .15s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .item::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 20%;
-            bottom: 20%;
-            width: 2px;
-            background: var(--accent-d);
-            opacity: 0;
-            transition: opacity .2s;
-            border-radius: 0 1px 1px 0
-        }
-
-        .item:hover {
-            border-color: var(--line2);
-            background: var(--bg4)
-        }
-
-        .item:hover::after {
-            opacity: 1
-        }
-
-        .item.pi {
-            opacity: .45
-        }
-
-        .item.pi .ia {
-            text-decoration: line-through;
-            text-decoration-color: rgba(24, 184, 104, 0.4)
-        }
-
-        .in {
-            font-size: 13px;
-            font-weight: 400;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 190px;
-            margin-bottom: 3px
-        }
-
-        .im {
-            font-size: 10px;
-            color: var(--text3);
-            font-family: var(--mono)
-        }
-
-        .ir {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 7px
-        }
-
-        .ia {
-            font-family: var(--mono);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text)
-        }
-
-        .ib {
-            font-size: 9px;
-            letter-spacing: .06em;
-            padding: 3px 9px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all .15s;
-            white-space: nowrap
-        }
-
-        .ib.un {
-            background: var(--red-d);
-            color: var(--red);
-            border: 1px solid rgba(217, 63, 88, 0.18)
-        }
-
-        .ib.pa {
-            background: var(--green-d);
-            color: var(--green);
-            border: 1px solid rgba(24, 184, 104, 0.18)
-        }
-
-        .ib:hover {
-            filter: brightness(1.2)
-        }
-
-        .dx {
-            position: absolute;
-            top: 9px;
-            right: 9px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: none;
-            border: none;
-            color: var(--text3);
-            font-size: 15px;
-            cursor: pointer;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-            transition: color .15s;
-            padding: 0
-        }
-
-        .item:hover .dx {
-            display: flex
-        }
-
-        .dx:hover {
-            color: var(--red)
-        }
-
-
-        /* UI polish: stronger hierarchy, readable secondary text, softer cards */
-        .brand,
-        .lh-t {
-            color: var(--text2);
-        }
-
-        .ts-l,
-        .sc-l,
-        .dhd,
-        .dtot,
-        .im,
-        .empty-t,
-        .h,
-        .k,
-        .note-arr {
-            color: var(--text3);
-        }
-
-        .ts-v,
-        .sc-v,
-        .ia,
-        .in {
-            color: var(--text);
-        }
-
-        .topbar,
-        .lh {
-            background: linear-gradient(180deg, rgba(16, 17, 26, 0.52), transparent);
-        }
-
-        .chip,
-        .item,
-        .toast {
-            background: var(--surface);
-            border-color: var(--line);
-            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
-            backdrop-filter: blur(14px);
-        }
-
-        .item {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.13);
-        }
-
-        .item:hover,
-        .chip:hover {
-            background: var(--surface-strong);
-            border-color: var(--line2);
-        }
-
-        .sc {
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
-            backdrop-filter: blur(12px);
-        }
-
-        #note {
-            border-bottom-color: var(--line2);
-        }
-
-        #note:focus {
-            border-color: var(--accent-l);
-        }
-
-        #amt::placeholder,
-        #note::placeholder {
-            color: rgba(169, 180, 208, 0.42);
-        }
-
-        .preview.show {
-            color: var(--text2);
-        }
-
-        .ib:hover,
-        .ts:hover,
-        .lh-back:hover {
-            filter: none;
-            opacity: 1;
-        }
-
-        .ib:hover {
-            transform: translateY(-1px);
-        }
-
-        .flash {
-            background: rgba(124, 109, 255, 0.08);
-        }
-
-        /* flash + toast */
-        .flash {
-            position: fixed;
-            inset: 0;
-            background: rgba(81, 68, 238, 0.05);
-            pointer-events: none;
-            z-index: 50;
-            opacity: 0;
-            transition: opacity .08s
-        }
-
-        .flash.on {
-            opacity: 1
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            background: var(--bg4);
-            border: 1px solid var(--line2);
-            border-radius: 20px;
-            padding: 9px 18px;
-            font-size: 11px;
-            color: var(--text3);
-            opacity: 0;
-            transition: all .22s;
-            pointer-events: none;
-            z-index: 999;
-            font-family: var(--mono);
-            letter-spacing: .04em;
-            white-space: nowrap
-        }
-
-        .toast.on {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0)
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chi Tiêu — UI polish</title>
+	<link
+		href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap"
+		rel="stylesheet">
+	<style>
+		*,
+		*::before,
+		*::after {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0
+		}
+
+		:root {
+			color-scheme: dark;
+
+			/* Balanced dark UI: vẫn tối, nhưng không bị chìm/đen gắt */
+			--bg: #10111a;
+			--bg1: #141622;
+			--bg2: #181b29;
+			--bg3: #1f2333;
+			--bg4: #262b3e;
+
+			--surface: rgba(31, 35, 51, 0.78);
+			--surface-strong: rgba(38, 43, 62, 0.92);
+
+			--line: rgba(148, 163, 184, 0.14);
+			--line2: rgba(148, 163, 184, 0.24);
+			--dim: #5f6b8a;
+
+			--text: #f2f5ff;
+			--text2: #a9b4d0;
+			--text3: #6f7a99;
+
+			--accent: #7c6dff;
+			--accent-l: #a79cff;
+			--accent-d: #6254e8;
+
+			--glow: rgba(124, 109, 255, 0.26);
+			--glow2: rgba(124, 109, 255, 0.11);
+
+			--green: #35d08b;
+			--green-d: rgba(53, 208, 139, 0.13);
+			--red: #ff6681;
+			--red-d: rgba(255, 102, 129, 0.13);
+
+			--shadow: 0 18px 70px rgba(0, 0, 0, 0.32);
+			--font: 'DM Sans', sans-serif;
+			--mono: 'DM Mono', monospace;
+		}
+
+		html,
+		body {
+			height: 100%;
+			overflow: hidden;
+			background:
+				radial-gradient(circle at 50% 42%, rgba(124, 109, 255, 0.13), transparent 36%),
+				radial-gradient(circle at 14% 18%, rgba(53, 208, 139, 0.08), transparent 28%),
+				linear-gradient(180deg, var(--bg1), var(--bg));
+		}
+
+		body {
+			font-family: var(--font);
+			color: var(--text);
+			font-size: 14px;
+			-webkit-font-smoothing: antialiased
+		}
+
+		::selection {
+			background: rgba(81, 68, 238, 0.35)
+		}
+
+		/* canvas */
+		#bg {
+			position: fixed;
+			inset: 0;
+			z-index: 0;
+			display: block;
+			width: 100vw;
+			height: 100vh;
+			pointer-events: none;
+			opacity: 1
+		}
+
+		/* views */
+		.view {
+			position: fixed;
+			inset: 0;
+			z-index: 10;
+			transition: opacity .35s cubic-bezier(.4, 0, .2, 1), transform .35s cubic-bezier(.4, 0, .2, 1)
+		}
+
+		.view.off {
+			opacity: 0;
+			pointer-events: none
+		}
+
+		/* ═══════════ ADD VIEW ═══════════ */
+		#va {
+			display: grid;
+			place-items: center
+		}
+
+		#va.off {
+			transform: scale(.96)
+		}
+
+		/* top bar */
+		.topbar {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			padding: 24px 32px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between
+		}
+
+		.brand {
+			font-size: 11px;
+			font-weight: 500;
+			letter-spacing: .18em;
+			text-transform: uppercase;
+			color: var(--text3)
+		}
+
+		.topstats {
+			display: flex;
+			gap: 24px
+		}
+
+		.ts {
+			text-align: right;
+			cursor: pointer;
+			transition: opacity .2s
+		}
+
+		.ts:hover {
+			opacity: .7
+		}
+
+		.ts-l {
+			font-size: 9px;
+			letter-spacing: .12em;
+			text-transform: uppercase;
+			color: var(--text3);
+			margin-bottom: 2px
+		}
+
+		.ts-v {
+			font-family: var(--mono);
+			font-size: 12px
+		}
+
+		.ts.un .ts-v {
+			color: var(--red)
+		}
+
+		.ts.pa .ts-v {
+			color: var(--green)
+		}
+
+		/* center */
+		.stage {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			width: 100%
+		}
+
+		.amt-wrap {
+			display: flex;
+			align-items: baseline;
+			gap: 12px;
+			position: relative
+		}
+
+		.sym {
+			font-family: var(--mono);
+			font-size: clamp(22px, 3.5vw, 38px);
+			font-weight: 400;
+			color: var(--text3);
+			line-height: 1;
+			user-select: none;
+			transition: color .25s;
+		}
+
+		.sym.lit {
+			color: var(--accent-l)
+		}
+
+		#amt {
+			font-family: var(--mono);
+			font-size: clamp(56px, 11vw, 108px);
+			font-weight: 300;
+			letter-spacing: -.04em;
+			color: var(--text);
+			background: none;
+			border: none;
+			outline: none;
+			caret-color: transparent;
+			text-align: center;
+			width: auto;
+			min-width: 60px;
+			max-width: 78vw;
+		}
+
+		#amt::placeholder {
+			color: var(--text3)
+		}
+
+		#amt.shake {
+			animation: shake .28s
+		}
+
+		@keyframes shake {
+
+			0%,
+			100% {
+				transform: translateX(0)
+			}
+
+			30% {
+				transform: translateX(-8px)
+			}
+
+			70% {
+				transform: translateX(8px)
+			}
+		}
+
+		/* fake caret */
+		.caret {
+			display: inline-block;
+			width: 3px;
+			border-radius: 2px;
+			background: var(--accent-l);
+			margin-left: 4px;
+			opacity: 0;
+			vertical-align: baseline;
+			animation: blink 1s infinite
+		}
+
+		@keyframes blink {
+
+			0%,
+			100% {
+				opacity: 0
+			}
+
+			40%,
+			60% {
+				opacity: 1
+			}
+		}
+
+		#amt:focus~.caret {
+			opacity: 1
+		}
+
+		.preview {
+			font-family: var(--mono);
+			font-size: 12px;
+			color: var(--text3);
+			margin-top: 8px;
+			height: 16px;
+			transition: opacity .2s;
+			opacity: 0;
+			letter-spacing: .03em
+		}
+
+		.preview.show {
+			opacity: 1
+		}
+
+		/* note */
+		.note-row {
+			margin-top: 52px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			width: min(400px, 72vw)
+		}
+
+		.debt-row {
+			margin-top: 16px;
+		}
+
+		.note-arr {
+			font-size: 14px;
+			color: var(--text3);
+			flex-shrink: 0;
+			font-family: var(--mono);
+			letter-spacing: -.02em
+		}
+
+		#note,
+		#debt {
+			flex: 1;
+			background: none;
+			border: none;
+			outline: none;
+			font-family: var(--font);
+			font-size: 16px;
+			font-weight: 300;
+			font-style: italic;
+			color: var(--text);
+			caret-color: var(--accent-l);
+			border-bottom: 1px solid var(--line2);
+			padding: 8px 0;
+			transition: border-color .2s;
+		}
+
+		#note::placeholder,
+		#debt::placeholder {
+			color: var(--text3)
+		}
+
+		#note:focus,
+		#debt:focus {
+			border-color: var(--dim)
+		}
+
+		/* datetime */
+		.dt {
+			margin-top: 24px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			opacity: .5;
+			transition: opacity .2s
+		}
+
+		.dt:focus-within,
+		.dt:hover {
+			opacity: 1
+		}
+
+		.chip {
+			position: relative;
+			font-family: var(--mono);
+			font-size: 11px;
+			color: var(--text3);
+			background: var(--bg3);
+			border: 1px solid var(--line);
+			border-radius: 6px;
+			padding: 5px 11px;
+			transition: all .15s;
+			cursor: pointer
+		}
+
+		.chip input {
+			position: absolute;
+			inset: 0;
+			opacity: 0;
+			width: 100%;
+			height: 100%;
+			cursor: pointer;
+			border: none;
+			background: none;
+			outline: none
+		}
+
+		.chip:hover {
+			border-color: var(--dim);
+			color: var(--text2)
+		}
+
+		/* hints */
+		.hints {
+			position: absolute;
+			bottom: 28px;
+			left: 0;
+			right: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 32px
+		}
+
+		.h {
+			display: flex;
+			align-items: center;
+			gap: 7px;
+			font-size: 11px;
+			color: var(--text3)
+		}
+
+		.k {
+			font-family: var(--mono);
+			font-size: 9px;
+			color: var(--text3);
+			border: 1px solid var(--line2);
+			border-radius: 4px;
+			padding: 2px 7px;
+			letter-spacing: .04em
+		}
+
+		/* ═══════════ LIST VIEW ═══════════ */
+		#vl {
+			display: flex;
+			flex-direction: column;
+			background:
+				linear-gradient(180deg, rgba(20, 22, 34, 0.94), rgba(16, 17, 26, 0.98));
+			backdrop-filter: blur(16px)
+		}
+
+		#vl.off {
+			transform: translateY(16px)
+		}
+
+		.lh {
+			padding: 24px 32px 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			flex-shrink: 0
+		}
+
+		.lh-t {
+			font-size: 10px;
+			font-weight: 500;
+			letter-spacing: .16em;
+			text-transform: uppercase;
+			color: var(--text3)
+		}
+
+		.lh-back {
+			font-size: 11px;
+			color: var(--text3);
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			transition: color .2s
+		}
+
+		.lh-back:hover {
+			color: var(--text2)
+		}
+
+		.lsum {
+			padding: 16px 32px;
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 8px;
+			flex-shrink: 0
+		}
+
+		.sc {
+			border-radius: 10px;
+			padding: 14px 18px;
+			border: 1px solid transparent
+		}
+
+		.sc.un {
+			background: var(--red-d);
+			border-color: rgba(217, 63, 88, 0.12)
+		}
+
+		.sc.pa {
+			background: var(--green-d);
+			border-color: rgba(24, 184, 104, 0.12)
+		}
+
+		.sc-l {
+			font-size: 9px;
+			letter-spacing: .12em;
+			text-transform: uppercase;
+			margin-bottom: 5px
+		}
+
+		.sc.un .sc-l {
+			color: rgba(217, 63, 88, 0.5)
+		}
+
+		.sc.pa .sc-l {
+			color: rgba(24, 184, 104, 0.5)
+		}
+
+		.sc-v {
+			font-family: var(--mono);
+			font-size: 18px;
+			font-weight: 400
+		}
+
+		.sc.un .sc-v {
+			color: var(--red)
+		}
+
+		.sc.pa .sc-v {
+			color: var(--green)
+		}
+
+		.lscroll {
+			flex: 1;
+			overflow-y: auto;
+			padding: 8px 32px 80px;
+			scrollbar-width: thin;
+			scrollbar-color: var(--line) transparent
+		}
+
+		.lscroll::-webkit-scrollbar {
+			width: 2px
+		}
+
+		.lscroll::-webkit-scrollbar-thumb {
+			background: var(--line2)
+		}
+
+		.empty {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			gap: 12px
+		}
+
+		.empty-dash {
+			width: 24px;
+			height: 1px;
+			background: var(--line2)
+		}
+
+		.empty-t {
+			font-size: 12px;
+			color: var(--text3);
+			text-align: center;
+			line-height: 2
+		}
+
+		.dg {
+			margin-bottom: 28px
+		}
+
+		.dhd {
+			font-size: 9px;
+			font-weight: 500;
+			letter-spacing: .14em;
+			text-transform: uppercase;
+			color: var(--text3);
+			margin-bottom: 10px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding-left: 2px
+		}
+
+		.dtot {
+			font-family: var(--mono);
+			font-size: 9px;
+			color: var(--text3)
+		}
+
+		.item {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			align-items: center;
+			padding: 13px 16px;
+			border-radius: 10px;
+			border: 1px solid var(--line);
+			background: var(--bg3);
+			margin-bottom: 5px;
+			cursor: default;
+			transition: border-color .15s, background .15s;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.item::after {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 20%;
+			bottom: 20%;
+			width: 2px;
+			background: var(--accent-d);
+			opacity: 0;
+			transition: opacity .2s;
+			border-radius: 0 1px 1px 0
+		}
+
+		.item:hover {
+			border-color: var(--line2);
+			background: var(--bg4)
+		}
+
+		.item:hover::after {
+			opacity: 1
+		}
+
+		.item.pi {
+			opacity: .45
+		}
+
+		.item.pi .ia {
+			text-decoration: line-through;
+			text-decoration-color: rgba(24, 184, 104, 0.4)
+		}
+
+		.in {
+			font-size: 13px;
+			font-weight: 400;
+			color: var(--text);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 190px;
+			margin-bottom: 3px
+		}
+
+		.im {
+			font-size: 10px;
+			color: var(--text3);
+			font-family: var(--mono)
+		}
+
+		.idb {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			width: fit-content;
+			margin-top: 6px;
+			padding: 3px 8px;
+			border-radius: 999px;
+			background: rgba(124, 109, 255, 0.10);
+			border: 1px solid rgba(124, 109, 255, 0.16);
+			color: var(--accent-l);
+			font-size: 10px;
+			font-family: var(--font);
+			font-style: italic;
+			max-width: 190px;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.ir {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 7px
+		}
+
+		.ia {
+			font-family: var(--mono);
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--text)
+		}
+
+		.ib {
+			font-size: 9px;
+			letter-spacing: .06em;
+			padding: 3px 9px;
+			border-radius: 20px;
+			cursor: pointer;
+			transition: all .15s;
+			white-space: nowrap
+		}
+
+		.ib.un {
+			background: var(--red-d);
+			color: var(--red);
+			border: 1px solid rgba(217, 63, 88, 0.18)
+		}
+
+		.ib.pa {
+			background: var(--green-d);
+			color: var(--green);
+			border: 1px solid rgba(24, 184, 104, 0.18)
+		}
+
+		.ib:hover {
+			filter: brightness(1.2)
+		}
+
+		.dx {
+			position: absolute;
+			top: 9px;
+			right: 9px;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: none;
+			border: none;
+			color: var(--text3);
+			font-size: 15px;
+			cursor: pointer;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
+			transition: color .15s;
+			padding: 0
+		}
+
+		.item:hover .dx {
+			display: flex
+		}
+
+		.dx:hover {
+			color: var(--red)
+		}
+
+
+		/* UI polish: stronger hierarchy, readable secondary text, softer cards */
+		.brand,
+		.lh-t {
+			color: var(--text2);
+		}
+
+		.ts-l,
+		.sc-l,
+		.dhd,
+		.dtot,
+		.im,
+		.empty-t,
+		.h,
+		.k,
+		.note-arr {
+			color: var(--text3);
+		}
+
+		.ts-v,
+		.sc-v,
+		.ia,
+		.in {
+			color: var(--text);
+		}
+
+		.topbar,
+		.lh {
+			background: linear-gradient(180deg, rgba(16, 17, 26, 0.52), transparent);
+		}
+
+		.chip,
+		.item,
+		.toast {
+			background: var(--surface);
+			border-color: var(--line);
+			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+			backdrop-filter: blur(14px);
+		}
+
+		.item {
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.13);
+		}
+
+		.item:hover,
+		.chip:hover {
+			background: var(--surface-strong);
+			border-color: var(--line2);
+		}
+
+		.sc {
+			box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+			backdrop-filter: blur(12px);
+		}
+
+		#note,
+		#debt {
+			border-bottom-color: var(--line2);
+		}
+
+		#note:focus,
+		#debt:focus {
+			border-color: var(--accent-l);
+		}
+
+		#amt::placeholder,
+		#note::placeholder,
+		#debt::placeholder {
+			color: rgba(169, 180, 208, 0.42);
+		}
+
+		.preview.show {
+			color: var(--text2);
+		}
+
+		.ib:hover,
+		.ts:hover,
+		.lh-back:hover {
+			filter: none;
+			opacity: 1;
+		}
+
+		.ib:hover {
+			transform: translateY(-1px);
+		}
+
+		.flash {
+			background: rgba(124, 109, 255, 0.08);
+		}
+
+		/* flash + toast */
+		.flash {
+			position: fixed;
+			inset: 0;
+			background: rgba(81, 68, 238, 0.05);
+			pointer-events: none;
+			z-index: 50;
+			opacity: 0;
+			transition: opacity .08s
+		}
+
+		.flash.on {
+			opacity: 1
+		}
+
+		.toast {
+			position: fixed;
+			bottom: 30px;
+			left: 50%;
+			transform: translateX(-50%) translateY(10px);
+			background: var(--bg4);
+			border: 1px solid var(--line2);
+			border-radius: 20px;
+			padding: 9px 18px;
+			font-size: 11px;
+			color: var(--text3);
+			opacity: 0;
+			transition: all .22s;
+			pointer-events: none;
+			z-index: 999;
+			font-family: var(--mono);
+			letter-spacing: .04em;
+			white-space: nowrap
+		}
+
+		.toast.on {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0)
+		}
+	</style>
 </head>
 
 <body>
-    <canvas id="bg"></canvas>
+	<canvas id="bg"></canvas>
 
-    <!-- ADD VIEW -->
-    <div class="view" id="va">
-        <div class="topbar">
-            <span class="brand">Chi tiêu</span>
-            <div class="topstats">
-                <div class="ts un" onclick="showList()" title="Xem danh sách (L)">
-                    <div class="ts-l">Chưa trả</div>
-                    <div class="ts-v" id="ts-u">—</div>
-                </div>
-                <div class="ts pa" onclick="showList()" title="Xem danh sách (L)">
-                    <div class="ts-l">Đã trả</div>
-                    <div class="ts-v" id="ts-p">—</div>
-                </div>
-            </div>
-        </div>
+	<!-- ADD VIEW -->
+	<div class="view" id="va">
+		<div class="topbar">
+			<span class="brand">Chi tiêu</span>
+			<div class="topstats">
+				<div class="ts un" onclick="showList()" title="Xem danh sách (L)">
+					<div class="ts-l">Chưa trả</div>
+					<div class="ts-v" id="ts-u">—</div>
+				</div>
+				<div class="ts pa" onclick="showList()" title="Xem danh sách (L)">
+					<div class="ts-l">Đã trả</div>
+					<div class="ts-v" id="ts-p">—</div>
+				</div>
+			</div>
+		</div>
 
-        <div class="stage">
-            <div class="amt-wrap">
-                <span class="sym" id="sym">₫</span>
-                <input id="amt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" tabindex="1"
-                    spellcheck="false">
-                <span class="caret"></span>
-            </div>
-            <div class="preview" id="prev"></div>
+		<div class="stage">
+			<div class="amt-wrap">
+				<span class="sym" id="sym">₫</span>
+				<input id="amt" type="text" inputmode="numeric" placeholder="0" autocomplete="off" tabindex="1"
+					spellcheck="false">
+				<span class="caret"></span>
+			</div>
+			<div class="preview" id="prev"></div>
 
-            <div class="note-row">
-                <span class="note-arr">→</span>
-                <input id="note" type="text" placeholder="ghi chú..." autocomplete="off" tabindex="2"
-                    spellcheck="false">
-            </div>
+			<div class="note-row">
+				<span class="note-arr">→</span>
+				<input id="note" type="text" placeholder="ghi chú..." autocomplete="off" tabindex="2" spellcheck="false">
+			</div>
 
-            <div class="dt" id="dt">
-                <div class="chip" id="chip-d"><span id="ld">hôm nay</span><input type="date" id="din" tabindex="3">
-                </div>
-                <div class="chip" id="chip-t"><span id="lt">bây giờ</span><input type="time" id="tin" tabindex="4">
-                </div>
-            </div>
-        </div>
+			<div class="note-row debt-row">
+				<span class="note-arr">↳</span>
+				<input id="debt" type="text" placeholder="nợ ai? bỏ trống nếu không có" autocomplete="off" tabindex="3"
+					spellcheck="false">
+			</div>
 
-        <div class="hints">
-            <span class="h"><span class="k">Tab</span> chuyển ô</span>
-            <span class="h"><span class="k">↵ Enter</span> lưu</span>
-            <span class="h"><span class="k">L</span> danh sách</span>
-            <span class="h"><span class="k">Esc</span> xoá trắng</span>
-        </div>
-    </div>
+			<div class="dt" id="dt">
+				<div class="chip" id="chip-d"><span id="ld">hôm nay</span><input type="date" id="din" tabindex="4">
+				</div>
+				<div class="chip" id="chip-t"><span id="lt">bây giờ</span><input type="time" id="tin" tabindex="5">
+				</div>
+			</div>
+		</div>
 
-    <!-- LIST VIEW -->
-    <div class="view off" id="vl">
-        <div class="lh">
-            <span class="lh-t">Lịch sử chi tiêu</span>
-            <span class="lh-back" onclick="showAdd()"><span class="k">Esc</span> quay lại thêm</span>
-        </div>
-        <div class="lsum">
-            <div class="sc un">
-                <div class="sc-l">Chưa trả</div>
-                <div class="sc-v" id="ls-u">0 ₫</div>
-            </div>
-            <div class="sc pa">
-                <div class="sc-l">Đã trả</div>
-                <div class="sc-v" id="ls-p">0 ₫</div>
-            </div>
-        </div>
-        <div class="lscroll">
-            <div class="empty" id="empty">
-                <div class="empty-dash"></div>
-                <div class="empty-t">Chưa có khoản nào.<br>Nhấn <strong style="color:var(--text2)">Esc</strong> để bắt
-                    đầu thêm.</div>
-            </div>
-            <div id="list"></div>
-        </div>
-    </div>
+		<div class="hints">
+			<span class="h"><span class="k">Tab</span> chuyển ô</span>
+			<span class="h"><span class="k">↵ Enter</span> lưu</span>
+			<span class="h"><span class="k">L</span> danh sách</span>
+			<span class="h"><span class="k">Esc</span> xoá trắng</span>
+		</div>
+	</div>
 
-    <div class="flash" id="flash"></div>
-    <div class="toast" id="toast"></div>
+	<!-- LIST VIEW -->
+	<div class="view off" id="vl">
+		<div class="lh">
+			<span class="lh-t">Lịch sử chi tiêu</span>
+			<span class="lh-back" onclick="showAdd()"><span class="k">Esc</span> quay lại thêm</span>
+		</div>
+		<div class="lsum">
+			<div class="sc un">
+				<div class="sc-l">Chưa trả</div>
+				<div class="sc-v" id="ls-u">0 ₫</div>
+			</div>
+			<div class="sc pa">
+				<div class="sc-l">Đã trả</div>
+				<div class="sc-v" id="ls-p">0 ₫</div>
+			</div>
+		</div>
+		<div class="lscroll">
+			<div class="empty" id="empty">
+				<div class="empty-dash"></div>
+				<div class="empty-t">Chưa có khoản nào.<br>Nhấn <strong style="color:var(--text2)">Esc</strong> để bắt
+					đầu thêm.</div>
+			</div>
+			<div id="list"></div>
+		</div>
+	</div>
 
-    <script>
-        /* ── BACKGROUND ── */
-        (() => {
-            const cv = document.getElementById('bg');
-            const x = cv.getContext('2d', { alpha: true });
-            let W = 0, H = 0, DPR = 1;
+	<div class="flash" id="flash"></div>
+	<div class="toast" id="toast"></div>
 
-            const css = getComputedStyle(document.documentElement);
-            const accent = css.getPropertyValue('--accent').trim() || '#7c6dff';
+	<script src="./main.js"></script>
 
-            const sz = () => {
-                DPR = Math.min(window.devicePixelRatio || 1, 2);
-                W = window.innerWidth;
-                H = window.innerHeight;
-                cv.style.width = W + 'px';
-                cv.style.height = H + 'px';
-                cv.width = Math.floor(W * DPR);
-                cv.height = Math.floor(H * DPR);
-                x.setTransform(DPR, 0, 0, DPR, 0, 0);
-            };
-
-            sz();
-            addEventListener('resize', sz, { passive: true });
-
-            const stars = Array.from({ length: 135 }, () => ({
-                x: Math.random(),
-                y: Math.random(),
-                r: Math.random() * .85 + .15,
-                base: Math.random() * .28 + .08,
-                phase: Math.random() * Math.PI * 2,
-                spd: .00055 + Math.random() * .00115
-            }));
-
-            const rings = [
-                { cy: .43, rx: 260, ry: 74, spd: .00025, ph: 0, o: .12 },
-                { cy: .43, rx: 410, ry: 118, spd: .00014, ph: 1.8, o: .075 },
-                { cy: .43, rx: 560, ry: 162, spd: .00008, ph: 3.5, o: .045 },
-            ];
-
-            const drawGrid = () => {
-                const step = 40;
-                x.save();
-                x.globalAlpha = .18;
-                x.strokeStyle = 'rgba(148, 163, 184, .16)';
-                x.lineWidth = 1;
-
-                for (let px = (W % step); px < W; px += step) {
-                    x.beginPath();
-                    x.moveTo(px, 0);
-                    x.lineTo(px, H);
-                    x.stroke();
-                }
-
-                for (let py = (H % step); py < H; py += step) {
-                    x.beginPath();
-                    x.moveTo(0, py);
-                    x.lineTo(W, py);
-                    x.stroke();
-                }
-
-                x.restore();
-            };
-
-            let t = 0;
-            const draw = () => {
-                t += 1;
-                x.clearRect(0, 0, W, H);
-
-                // Base wash: canvas luôn có nền, không còn tình trạng trong suốt/không thấy.
-                const base = x.createLinearGradient(0, 0, 0, H);
-                base.addColorStop(0, '#171a28');
-                base.addColorStop(.56, '#11131d');
-                base.addColorStop(1, '#0e1018');
-                x.fillStyle = base;
-                x.fillRect(0, 0, W, H);
-
-                // Subtle check/grid texture để canvas background hiển thị rõ.
-                drawGrid();
-
-                // Soft ambient blobs.
-                let g = x.createRadialGradient(W * .5, H * .42, 0, W * .5, H * .42, Math.max(W, H) * .48);
-                g.addColorStop(0, 'rgba(124,109,255,.18)');
-                g.addColorStop(.42, 'rgba(124,109,255,.065)');
-                g.addColorStop(1, 'rgba(0,0,0,0)');
-                x.fillStyle = g;
-                x.fillRect(0, 0, W, H);
-
-                g = x.createRadialGradient(W * .15, H * .2, 0, W * .15, H * .2, Math.max(W, H) * .32);
-                g.addColorStop(0, 'rgba(53,208,139,.10)');
-                g.addColorStop(1, 'rgba(0,0,0,0)');
-                x.fillStyle = g;
-                x.fillRect(0, 0, W, H);
-
-                // Stars.
-                stars.forEach(s => {
-                    s.phase += s.spd;
-                    const o = s.base * (0.5 + 0.5 * Math.sin(s.phase));
-                    x.beginPath();
-                    x.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
-                    x.fillStyle = `rgba(220,224,255,${o})`;
-                    x.fill();
-                });
-
-                // Orbital rings.
-                rings.forEach(r => {
-                    const cx = W / 2, cy = r.cy * H, angle = r.ph + t * r.spd;
-
-                    x.save();
-                    x.translate(cx, cy);
-                    x.scale(1, r.ry / r.rx);
-                    x.beginPath();
-                    x.arc(0, 0, r.rx, 0, Math.PI * 2);
-                    x.strokeStyle = `rgba(167,156,255,${r.o})`;
-                    x.lineWidth = 1;
-                    x.stroke();
-                    x.restore();
-
-                    x.save();
-                    x.translate(cx, cy);
-                    const dotX = r.rx * Math.cos(angle);
-                    const dotY = r.ry * Math.sin(angle);
-                    const dg = x.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
-                    dg.addColorStop(0, `rgba(167,156,255,${Math.min(r.o * 4.8, .75)})`);
-                    dg.addColorStop(1, 'rgba(167,156,255,0)');
-                    x.fillStyle = dg;
-                    x.fillRect(dotX - 12, dotY - 12, 24, 24);
-                    x.beginPath();
-                    x.arc(dotX, dotY, 1.8, 0, Math.PI * 2);
-                    x.fillStyle = `rgba(242,245,255,${Math.min(r.o * 5, .7)})`;
-                    x.fill();
-                    x.restore();
-                });
-
-                // Readability vignette, lighter than before.
-                const v = x.createRadialGradient(W / 2, H * .43, H * .1, W / 2, H * .43, Math.max(W, H) * .78);
-                v.addColorStop(0, 'rgba(0,0,0,0)');
-                v.addColorStop(1, 'rgba(5,7,12,.42)');
-                x.fillStyle = v;
-                x.fillRect(0, 0, W, H);
-
-                requestAnimationFrame(draw);
-            };
-
-            draw();
-        })();
-
-        /* ── DATA ── */
-        const KEY = 'ct3';
-        let data = [];
-        try { data = JSON.parse(localStorage.getItem(KEY)) || [] } catch { }
-        const persist = () => localStorage.setItem(KEY, JSON.stringify(data));
-        const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
-
-        /* ── FORMAT ── */
-        const vnd = n => new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
-        const short = n => {
-            if (n >= 1e9) return (n / 1e9).toFixed(1).replace('.0', '') + 'B ₫';
-            if (n >= 1e6) return (n / 1e6).toFixed(1).replace('.0', '') + 'M ₫';
-            if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K ₫';
-            return vnd(n);
-        };
-        const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-        const todayISO = () => new Date().toISOString().slice(0, 10);
-        const nowHM = () => new Date().toTimeString().slice(0, 5);
-        const fmtD = iso => {
-            const d = new Date(iso + 'T00:00:00'), td = new Date(), yd = new Date();
-            yd.setDate(yd.getDate() - 1);
-            if (d.toDateString() === td.toDateString()) return 'Hôm nay';
-            if (d.toDateString() === yd.toDateString()) return 'Hôm qua';
-            return DAYS[d.getDay()] + ' ' + d.getDate() + '/' + String(d.getMonth() + 1).padStart(2, '0');
-        };
-
-        /* ── ELS ── */
-        const $ = id => document.getElementById(id);
-        const amtEl = $('amt'), noteEl = $('note'), prevEl = $('prev'), symEl = $('sym');
-        const dinEl = $('din'), tinEl = $('tin'), ldEl = $('ld'), ltEl = $('lt');
-
-        /* ── INIT FORM ── */
-        const initDT = () => {
-            dinEl.value = todayISO(); tinEl.value = nowHM();
-            ldEl.textContent = 'hôm nay'; ltEl.textContent = nowHM();
-        };
-        initDT();
-
-        /* ── AMOUNT ── */
-        amtEl.addEventListener('input', () => {
-            const raw = amtEl.value.replace(/\D/g, '');
-            amtEl.value = raw;
-            const n = parseInt(raw) || 0;
-            symEl.classList.toggle('lit', raw.length > 0);
-            prevEl.textContent = n > 0 ? vnd(n) : '';
-            prevEl.classList.toggle('show', n > 0);
-        });
-
-        /* ── DATE/TIME ── */
-        dinEl.addEventListener('change', () => { ldEl.textContent = dinEl.value ? fmtD(dinEl.value) : 'hôm nay' });
-        tinEl.addEventListener('change', () => { ltEl.textContent = tinEl.value || nowHM() });
-
-        /* ── VIEW ── */
-        let view = 'add';
-        function showList() {
-            renderList();
-            $('va').classList.add('off'); $('vl').classList.remove('off');
-            view = 'list';
-        }
-        function showAdd() {
-            $('vl').classList.add('off'); $('va').classList.remove('off');
-            view = 'add';
-            setTimeout(() => amtEl.focus(), 60);
-        }
-
-        /* ── SUBMIT ── */
-        function submit() {
-            const raw = amtEl.value.replace(/\D/g, '');
-            const n = parseInt(raw) || 0;
-            if (!n) {
-                amtEl.classList.add('shake');
-                setTimeout(() => amtEl.classList.remove('shake'), 300);
-                amtEl.focus(); return;
-            }
-            data.unshift({
-                id: uid(), amount: n, note: noteEl.value.trim(),
-                date: dinEl.value || todayISO(), time: tinEl.value || nowHM(), paid: false, ts: Date.now()
-            });
-            persist();
-            // flash
-            const fl = $('flash'); fl.classList.add('on'); setTimeout(() => fl.classList.remove('on'), 120);
-            // reset
-            amtEl.value = ''; noteEl.value = ''; prevEl.textContent = ''; prevEl.classList.remove('show');
-            symEl.classList.remove('lit'); initDT();
-            amtEl.focus();
-            updateStats();
-            toast('✓ ' + vnd(n));
-        }
-
-        function clearForm() {
-            if (amtEl.value || noteEl.value) {
-                amtEl.value = ''; noteEl.value = ''; prevEl.classList.remove('show');
-                symEl.classList.remove('lit'); amtEl.focus();
-            }
-        }
-
-        /* ── KEYBOARD ── */
-        document.addEventListener('keydown', e => {
-            if (view === 'add') {
-                if (e.key === 'Enter') { e.preventDefault(); submit(); }
-                if (e.key === 'Escape') { e.preventDefault(); clearForm(); }
-                if ((e.key === 'l' || e.key === 'L') && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); showList(); }
-            } else {
-                if (e.key === 'Escape') { e.preventDefault(); showAdd(); }
-            }
-        });
-
-        /* ── STATS ── */
-        function updateStats() {
-            const un = data.filter(i => !i.paid).reduce((s, i) => s + i.amount, 0);
-            const pa = data.filter(i => i.paid).reduce((s, i) => s + i.amount, 0);
-            $('ts-u').textContent = data.length ? short(un) : '—';
-            $('ts-p').textContent = data.length ? short(pa) : '—';
-            $('ls-u').textContent = vnd(un);
-            $('ls-p').textContent = vnd(pa);
-        }
-
-        /* ── RENDER LIST ── */
-        function renderList() {
-            const listEl = $('list'), emptyEl = $('empty');
-            updateStats();
-            if (!data.length) { emptyEl.style.display = 'flex'; listEl.innerHTML = ''; return; }
-            emptyEl.style.display = 'none';
-            const grp = {};
-            data.forEach(i => { if (!grp[i.date]) grp[i.date] = []; grp[i.date].push(i); });
-            const dates = Object.keys(grp).sort((a, b) => b.localeCompare(a));
-            listEl.innerHTML = '';
-            dates.forEach(d => {
-                const items = grp[d].sort((a, b) => b.ts - a.ts);
-                const tot = items.reduce((s, i) => s + i.amount, 0);
-                const g = document.createElement('div'); g.className = 'dg';
-                g.innerHTML = `<div class="dhd"><span>${fmtD(d)}</span><span class="dtot">${short(tot)}</span></div>`;
-                items.forEach(item => {
-                    const el = document.createElement('div');
-                    el.className = 'item' + (item.paid ? ' pi' : '');
-                    el.innerHTML = `
-        <div>
-          <div class="in">${item.note || '—'}</div>
-          <div class="im">${item.time ? item.time + ' · ' : ''}${fmtD(item.date)}</div>
-        </div>
-        <div class="ir">
-          <div class="ia">${vnd(item.amount)}</div>
-          <div class="ib ${item.paid ? 'pa' : 'un'}" data-id="${item.id}">${item.paid ? '✓ trả rồi' : 'chưa trả'}</div>
-        </div>
-        <button class="dx" data-del="${item.id}">×</button>`;
-                    g.appendChild(el);
-                });
-                listEl.appendChild(g);
-            });
-            listEl.querySelectorAll('.ib').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toggle(b.dataset.id); }));
-            listEl.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); del(b.dataset.del); }));
-        }
-
-        function toggle(id) {
-            data = data.map(i => i.id === id ? { ...i, paid: !i.paid } : i);
-            persist(); renderList();
-            const f = data.find(i => i.id === id);
-            toast(f?.paid ? '✓ Đã trả' : '↩ Chưa trả');
-        }
-        function del(id) {
-            data = data.filter(i => i.id !== id); persist(); renderList(); toast('Đã xoá');
-        }
-
-        /* ── TOAST ── */
-        let tt;
-        function toast(msg) {
-            const el = $('toast'); el.textContent = msg; el.classList.add('on');
-            clearTimeout(tt); tt = setTimeout(() => el.classList.remove('on'), 1600);
-        }
-
-        /* ── BOOT ── */
-        updateStats();
-        setTimeout(() => amtEl.focus(), 150);
-    </script>
 </body>
 
 </html>
