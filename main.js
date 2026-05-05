@@ -159,211 +159,423 @@ class ExpenseStore {
 }
 
 class CanvasBackground {
-  constructor(canvas) {
+  constructor(canvas, options = {}) {
+    if (!canvas) throw new Error("CanvasBackground: canvas is required");
+
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d", { alpha: true });
+
     this.width = 0;
     this.height = 0;
     this.dpr = 1;
-    this.tick = 0;
+    this.frame = 0;
+    this.raf = null;
+    this.lastTime = 0;
 
-    this.stars = Array.from({ length: 135 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      r: Math.random() * 0.85 + 0.15,
-      base: Math.random() * 0.28 + 0.08,
-      phase: Math.random() * Math.PI * 2,
-      spd: 0.00055 + Math.random() * 0.00115,
-    }));
+    this.options = {
+      particleCount: options.particleCount ?? 150,
+      accent: options.accent ?? "124, 109, 255",
+      accent2: options.accent2 ?? "53, 208, 139",
+      accent3: options.accent3 ?? "56, 189, 248",
+      maxDpr: options.maxDpr ?? 2,
+      interactive: options.interactive ?? true,
+      ...options,
+    };
+
+    this.pointer = {
+      x: 0.5,
+      y: 0.5,
+      tx: 0.5,
+      ty: 0.5,
+      active: false,
+    };
+
+    this.reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+
+    this.particles = Array.from({ length: this.options.particleCount }, () =>
+      this.createParticle(),
+    );
+
+    this.orbs = [
+      {
+        x: 0.18,
+        y: 0.22,
+        r: 0.34,
+        c: this.options.accent2,
+        a: 0.11,
+        sx: 0.00007,
+        sy: 0.00004,
+      },
+      {
+        x: 0.74,
+        y: 0.28,
+        r: 0.42,
+        c: this.options.accent,
+        a: 0.16,
+        sx: -0.00005,
+        sy: 0.00006,
+      },
+      {
+        x: 0.55,
+        y: 0.82,
+        r: 0.52,
+        c: this.options.accent3,
+        a: 0.08,
+        sx: 0.00004,
+        sy: -0.00003,
+      },
+    ];
 
     this.rings = [
-      { cy: 0.43, rx: 260, ry: 74, spd: 0.00025, ph: 0, o: 0.12 },
-      { cy: 0.43, rx: 410, ry: 118, spd: 0.00014, ph: 1.8, o: 0.075 },
-      { cy: 0.43, rx: 560, ry: 162, spd: 0.00008, ph: 3.5, o: 0.045 },
+      {
+        y: 0.48,
+        rx: 250,
+        ry: 72,
+        speed: 0.00055,
+        phase: 0,
+        alpha: 0.18,
+        color: this.options.accent,
+      },
+      {
+        y: 0.48,
+        rx: 390,
+        ry: 112,
+        speed: -0.00034,
+        phase: 1.8,
+        alpha: 0.12,
+        color: this.options.accent3,
+      },
+      {
+        y: 0.48,
+        rx: 560,
+        ry: 158,
+        speed: 0.0002,
+        phase: 3.7,
+        alpha: 0.075,
+        color: this.options.accent,
+      },
     ];
 
     this.resize = this.resize.bind(this);
     this.draw = this.draw.bind(this);
+    this.onPointerMove = this.onPointerMove.bind(this);
+    this.onPointerLeave = this.onPointerLeave.bind(this);
+  }
+
+  createParticle() {
+    return {
+      x: Math.random(),
+      y: Math.random(),
+      z: Math.random() * 0.8 + 0.2,
+      r: Math.random() * 1.25 + 0.18,
+      a: Math.random() * 0.34 + 0.08,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 0.0009 + 0.00035,
+      drift: (Math.random() - 0.5) * 0.00018,
+    };
   }
 
   start() {
     this.resize();
-    addEventListener("resize", this.resize, { passive: true });
-    requestAnimationFrame(this.draw);
+    window.addEventListener("resize", this.resize, { passive: true });
+
+    if (this.options.interactive) {
+      window.addEventListener("pointermove", this.onPointerMove, {
+        passive: true,
+      });
+      window.addEventListener("pointerleave", this.onPointerLeave, {
+        passive: true,
+      });
+    }
+
+    this.raf = requestAnimationFrame(this.draw);
+  }
+
+  stop() {
+    cancelAnimationFrame(this.raf);
+    window.removeEventListener("resize", this.resize);
+    window.removeEventListener("pointermove", this.onPointerMove);
+    window.removeEventListener("pointerleave", this.onPointerLeave);
   }
 
   resize() {
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.dpr = Math.min(window.devicePixelRatio || 1, this.options.maxDpr);
     this.width = window.innerWidth;
     this.height = window.innerHeight;
 
-    this.canvas.style.width = this.width + "px";
-    this.canvas.style.height = this.height + "px";
+    this.canvas.style.width = `${this.width}px`;
+    this.canvas.style.height = `${this.height}px`;
     this.canvas.width = Math.floor(this.width * this.dpr);
     this.canvas.height = Math.floor(this.height * this.dpr);
 
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
   }
 
-  drawGrid() {
-    const step = 40;
+  onPointerMove(event) {
+    this.pointer.tx = event.clientX / Math.max(this.width, 1);
+    this.pointer.ty = event.clientY / Math.max(this.height, 1);
+    this.pointer.active = true;
+  }
+
+  onPointerLeave() {
+    this.pointer.tx = 0.5;
+    this.pointer.ty = 0.5;
+    this.pointer.active = false;
+  }
+
+  lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  drawBase() {
+    const { ctx, width, height } = this;
+    const g = ctx.createLinearGradient(0, 0, width, height);
+
+    g.addColorStop(0, "#171a2d");
+    g.addColorStop(0.42, "#0d1020");
+    g.addColorStop(1, "#070913");
+
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  drawNoise() {
     const { ctx, width, height } = this;
 
     ctx.save();
-    ctx.globalAlpha = 0.18;
-    ctx.strokeStyle = "rgba(148, 163, 184, .16)";
-    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.045;
 
-    for (let x = width % step; x < width; x += step) {
+    for (let i = 0; i < 1200; i += 1) {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      ctx.fillStyle = Math.random() > 0.5 ? "#ffffff" : "#94a3b8";
+      ctx.fillRect(x, y, 1, 1);
+    }
+
+    ctx.restore();
+  }
+
+  drawAurora(time) {
+    const { ctx, width, height, pointer, options } = this;
+    const px = (pointer.x - 0.5) * 80;
+    const py = (pointer.y - 0.5) * 50;
+
+    this.orbs.forEach((orb, index) => {
+      const ox =
+        width * (orb.x + Math.sin(time * orb.sx + index) * 0.04) +
+        px * (index + 1) * 0.25;
+      const oy =
+        height * (orb.y + Math.cos(time * orb.sy + index) * 0.04) +
+        py * (index + 1) * 0.2;
+      const radius = Math.max(width, height) * orb.r;
+
+      const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, radius);
+      g.addColorStop(0, `rgba(${orb.c}, ${orb.a})`);
+      g.addColorStop(0.42, `rgba(${orb.c}, ${orb.a * 0.34})`);
+      g.addColorStop(1, `rgba(${orb.c}, 0)`);
+
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, width, height);
+    });
+
+    const beam = ctx.createLinearGradient(width * 0.1, 0, width * 0.9, height);
+    beam.addColorStop(0, `rgba(${options.accent3}, 0)`);
+    beam.addColorStop(0.5, `rgba(${options.accent3}, 0.075)`);
+    beam.addColorStop(1, `rgba(${options.accent}, 0)`);
+
+    ctx.save();
+    ctx.translate(width * 0.5, height * 0.45);
+    ctx.rotate(-0.18 + (pointer.x - 0.5) * 0.05);
+    ctx.fillStyle = beam;
+    ctx.fillRect(-width, -height * 0.18, width * 2, height * 0.36);
+    ctx.restore();
+  }
+
+  drawPerspectiveGrid(time) {
+    const { ctx, width, height, pointer, options } = this;
+    const horizon = height * 0.61 + (pointer.y - 0.5) * 14;
+    const centerX = width * 0.5 + (pointer.x - 0.5) * 38;
+    const bottom = height + 40;
+    const lineCount = 18;
+
+    ctx.save();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(${options.accent3}, 0.105)`;
+
+    for (let i = -lineCount; i <= lineCount; i += 1) {
+      const x = centerX + i * (width / lineCount) * 0.46;
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
+      ctx.moveTo(centerX, horizon);
+      ctx.lineTo(x, bottom);
       ctx.stroke();
     }
 
-    for (let y = height % step; y < height; y += step) {
+    for (let i = 0; i < 22; i += 1) {
+      const p = i / 22;
+      const y = this.lerp(horizon, bottom, p * p);
+      const alpha = this.lerp(0.02, 0.18, p);
+
+      ctx.strokeStyle = `rgba(${options.accent}, ${alpha})`;
       ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
+      ctx.moveTo(0, y + Math.sin(time * 0.001 + i) * 2);
+      ctx.lineTo(width, y + Math.sin(time * 0.001 + i) * 2);
       ctx.stroke();
     }
 
     ctx.restore();
   }
 
-  drawBase() {
-    const { ctx, width, height } = this;
-    const base = ctx.createLinearGradient(0, 0, 0, height);
+  drawParticles(time) {
+    const { ctx, width, height, pointer, reducedMotion } = this;
+    const parallaxX = (pointer.x - 0.5) * 28;
+    const parallaxY = (pointer.y - 0.5) * 18;
 
-    base.addColorStop(0, "#171a28");
-    base.addColorStop(0.56, "#11131d");
-    base.addColorStop(1, "#0e1018");
+    this.particles.forEach((p) => {
+      if (!reducedMotion) {
+        p.phase += p.speed * 16;
+        p.y -= p.speed * 0.08;
+        p.x += p.drift;
 
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, width, height);
-  }
+        if (p.y < -0.02) p.y = 1.02;
+        if (p.x < -0.02) p.x = 1.02;
+        if (p.x > 1.02) p.x = -0.02;
+      }
 
-  drawGlow() {
-    const { ctx, width, height } = this;
-    let glow = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.42,
-      0,
-      width * 0.5,
-      height * 0.42,
-      Math.max(width, height) * 0.48,
-    );
-
-    glow.addColorStop(0, "rgba(124,109,255,.18)");
-    glow.addColorStop(0.42, "rgba(124,109,255,.065)");
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
-
-    glow = ctx.createRadialGradient(
-      width * 0.15,
-      height * 0.2,
-      0,
-      width * 0.15,
-      height * 0.2,
-      Math.max(width, height) * 0.32,
-    );
-    glow.addColorStop(0, "rgba(53,208,139,.10)");
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  drawStars() {
-    const { ctx, width, height } = this;
-
-    this.stars.forEach((star) => {
-      star.phase += star.spd;
-
-      const opacity = star.base * (0.5 + 0.5 * Math.sin(star.phase));
+      const twinkle = 0.55 + 0.45 * Math.sin(p.phase + time * p.speed);
+      const x = p.x * width + parallaxX * p.z;
+      const y = p.y * height + parallaxY * p.z;
+      const radius = p.r * p.z;
 
       ctx.beginPath();
-      ctx.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(220,224,255,${opacity})`;
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(230, 235, 255, ${p.a * twinkle})`;
       ctx.fill();
     });
   }
 
-  drawRings() {
-    const { ctx, width, height, tick } = this;
-    const cx = width / 2;
+  drawRings(time) {
+    const { ctx, width, height, pointer } = this;
+    const cx = width * 0.5 + (pointer.x - 0.5) * 22;
+    const cyOffset = (pointer.y - 0.5) * 18;
 
-    this.rings.forEach((ring) => {
-      const cy = ring.cy * height;
-      const angle = ring.ph + tick * ring.spd;
+    this.rings.forEach((ring, index) => {
+      const cy = height * ring.y + cyOffset;
+      const rx = ring.rx * Math.min(width / 980, 1.18);
+      const ry = ring.ry * Math.min(width / 980, 1.18);
+      const angle = ring.phase + time * ring.speed;
 
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.scale(1, ring.ry / ring.rx);
+      ctx.rotate((pointer.x - 0.5) * 0.045);
+      ctx.scale(1, ry / rx);
       ctx.beginPath();
-      ctx.arc(0, 0, ring.rx, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(167,156,255,${ring.o})`;
+      ctx.arc(0, 0, rx, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${ring.color}, ${ring.alpha})`;
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.restore();
 
-      ctx.save();
-      ctx.translate(cx, cy);
-
-      const dotX = ring.rx * Math.cos(angle);
-      const dotY = ring.ry * Math.sin(angle);
-      const dotGlow = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
-
-      dotGlow.addColorStop(
+      const dotX = cx + Math.cos(angle) * rx;
+      const dotY = cy + Math.sin(angle) * ry;
+      const glow = ctx.createRadialGradient(
+        dotX,
+        dotY,
         0,
-        `rgba(167,156,255,${Math.min(ring.o * 4.8, 0.75)})`,
+        dotX,
+        dotY,
+        22 + index * 5,
       );
-      dotGlow.addColorStop(1, "rgba(167,156,255,0)");
+      glow.addColorStop(
+        0,
+        `rgba(${ring.color}, ${Math.min(ring.alpha * 5, 0.78)})`,
+      );
+      glow.addColorStop(1, `rgba(${ring.color}, 0)`);
 
-      ctx.fillStyle = dotGlow;
-      ctx.fillRect(dotX - 12, dotY - 12, 24, 24);
+      ctx.fillStyle = glow;
+      ctx.fillRect(dotX - 32, dotY - 32, 64, 64);
 
       ctx.beginPath();
-      ctx.arc(dotX, dotY, 1.8, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(242,245,255,${Math.min(ring.o * 5, 0.7)})`;
+      ctx.arc(dotX, dotY, 2.1, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(248, 250, 252, 0.82)";
       ctx.fill();
-
-      ctx.restore();
     });
+  }
+
+  drawGlassPlate(time) {
+    const { ctx, width, height, pointer, options } = this;
+    const cx = width * 0.5 + (pointer.x - 0.5) * 18;
+    const cy = height * 0.48 + (pointer.y - 0.5) * 12;
+    const radius = Math.min(width, height) * 0.18;
+
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius * 1.6);
+    g.addColorStop(0, `rgba(${options.accent}, 0.16)`);
+    g.addColorStop(0.58, `rgba(${options.accent3}, 0.035)`);
+    g.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.sin(time * 0.00035) * 0.05);
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(
+      -radius * 1.12,
+      -radius * 0.54,
+      radius * 2.24,
+      radius * 1.08,
+      28,
+    );
+    ctx.stroke();
+    ctx.restore();
   }
 
   drawVignette() {
     const { ctx, width, height } = this;
-    const vignette = ctx.createRadialGradient(
-      width / 2,
-      height * 0.43,
-      height * 0.1,
-      width / 2,
-      height * 0.43,
+    const g = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.42,
+      Math.min(width, height) * 0.2,
+      width * 0.5,
+      height * 0.42,
       Math.max(width, height) * 0.78,
     );
 
-    vignette.addColorStop(0, "rgba(0,0,0,0)");
-    vignette.addColorStop(1, "rgba(5,7,12,.42)");
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(0.72, "rgba(2,6,23,0.08)");
+    g.addColorStop(1, "rgba(2,6,23,0.68)");
 
-    ctx.fillStyle = vignette;
+    ctx.fillStyle = g;
     ctx.fillRect(0, 0, width, height);
   }
 
-  draw() {
-    this.tick += 1;
-    this.ctx.clearRect(0, 0, this.width, this.height);
+  draw(now = 0) {
+    const { ctx, width, height, pointer } = this;
+
+    this.lastTime = now;
+    this.frame += 1;
+
+    pointer.x = this.lerp(pointer.x, pointer.tx, 0.055);
+    pointer.y = this.lerp(pointer.y, pointer.ty, 0.055);
+
+    ctx.clearRect(0, 0, width, height);
 
     this.drawBase();
-    this.drawGrid();
-    this.drawGlow();
-    this.drawStars();
-    this.drawRings();
+    this.drawAurora(now);
+    this.drawPerspectiveGrid(now);
+    this.drawParticles(now);
+    this.drawRings(now);
+    this.drawGlassPlate(now);
     this.drawVignette();
 
-    requestAnimationFrame(this.draw);
+    if (this.frame % 3 === 0) this.drawNoise();
+
+    this.raf = requestAnimationFrame(this.draw);
   }
 }
 
