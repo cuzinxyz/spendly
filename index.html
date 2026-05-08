@@ -27,6 +27,24 @@
             <div class="ts-l">Đã trả</div>
             <div class="ts-v" id="ts-p">—</div>
           </div>
+          <button
+            class="topbar-report-btn"
+            data-action="show-report"
+            title="Báo cáo (R)"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <path d="M5 10V8M8 10V6M11 10V4" />
+            </svg>
+            Báo cáo
+          </button>
         </div>
       </div>
 
@@ -86,6 +104,7 @@
         <span class="h"><span class="k">Tab</span> chuyển ô</span>
         <span class="h"><span class="k">↵ Enter</span> lưu</span>
         <span class="h"><span class="k">L</span> danh sách</span>
+        <span class="h"><span class="k">R</span> báo cáo</span>
         <span class="h"><span class="k">Esc</span> xoá trắng</span>
       </div>
     </div>
@@ -94,9 +113,27 @@
     <div class="view off" id="vl">
       <div class="lh">
         <span class="lh-t">Lịch sử chi tiêu</span>
-        <span class="lh-back" onclick="showAdd()"
-          ><span class="k">Esc</span> quay lại thêm</span
-        >
+        <div class="lh-actions">
+          <button class="lh-report-btn" data-action="show-report">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <path d="M5 10V8M8 10V6M11 10V4" />
+            </svg>
+            Báo cáo
+          </button>
+          <span class="lh-back" onclick="window.expenseApp?.ui?.showAdd()">
+            <span class="k">Esc</span> quay lại
+          </span>
+        </div>
       </div>
       <div class="lsum">
         <div class="sc un">
@@ -123,6 +160,8 @@
     <div class="flash" id="flash"></div>
     <div class="toast" id="toast"></div>
 
+    <!-- Chart.js for report -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
     <script src="./main.js"></script>
   </body>
 </html>
